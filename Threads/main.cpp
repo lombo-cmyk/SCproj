@@ -78,6 +78,6 @@ int main() {
     }
     GlobalIntValue=0;
     IncrementValue();
-
+    getchar();
     return 0;
 }
