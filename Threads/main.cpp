@@ -34,14 +34,16 @@ void Print50Times(std::string s){
 
 void IncrementValue(){
     auto start=std::chrono::system_clock::now();
-    for (int i=0; i<10000000; i++){
+    while(GlobalIntValue<10000000){
         locker.lock();
         GlobalIntValue++;
         locker.unlock();
     }
     auto stop=std::chrono::system_clock::now();
     std::chrono::duration<double> duration=stop-start;
+    locker.lock();
     std::cout << "Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
+    locker.unlock();
 }
 
 int main() {
@@ -74,7 +76,7 @@ int main() {
     for( int i=0; i<10; i++){
         VectorOfThreads[i].join();
     }
-
+    GlobalIntValue=0;
     IncrementValue();
 
     return 0;
