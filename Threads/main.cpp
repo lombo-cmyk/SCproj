@@ -4,8 +4,8 @@
 #include <vector>
 #include <atomic>
 static std::mutex locker;
-std::atomic_int GlobalIntValue = 0;
-//int GlobalIntValue = 0;
+std::atomic_int GlobalAtomicValue;
+int GlobalIntValue;
 void FunctionThreadInfo(std::string s){
         std::cout << s << "my id is:" <<std::this_thread::get_id();
 }
@@ -24,26 +24,46 @@ struct ThreadStruct{
 };
 
 void Print50Times(std::string s){
-    for (int i=0; i<50; i++){
-        locker.lock();
+    const int NumberOfPrints = 50;
+    for (int i=0; i<NumberOfPrints; i++){
+        std::lock_guard<std::mutex> lock(locker);
         std::cout << "Passed string: " << s << std::endl;
-        locker.unlock();
         //std::this_thread::sleep_for(std::chrono::milliseconds(i));
     }
 }
 
-void IncrementValue(){
+void IncrementIntValue(){
     auto start=std::chrono::system_clock::now();
     while(GlobalIntValue<10000000){
-        locker.lock();
+        std::lock_guard<std::mutex> lock(locker);
         GlobalIntValue++;
-        locker.unlock();
     }
     auto stop=std::chrono::system_clock::now();
     std::chrono::duration<double> duration=stop-start;
-    locker.lock();
-    std::cout << "Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
-    locker.unlock();
+    std::lock_guard<std::mutex> lock(locker);
+    std::cout << "GLOBAL INT Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
+}
+
+void IncrementAtomicValue(){
+    auto start=std::chrono::system_clock::now();
+    while(GlobalAtomicValue++<10000000){
+        //GlobalAtomicValue++;
+    }
+    auto stop=std::chrono::system_clock::now();
+    std::chrono::duration<double> duration=stop-start;
+    std::lock_guard<std::mutex> lock(locker);
+    std::cout << "ATOMIC Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
+}
+
+void IncrementUnsynchronizedValue(){
+    auto start=std::chrono::system_clock::now();
+    while(GlobalIntValue<10000000){
+        GlobalIntValue++;
+    }
+    auto stop=std::chrono::system_clock::now();
+    std::chrono::duration<double> duration=stop-start;
+    std::lock_guard<std::mutex> lock(locker);
+    std::cout << "UNSYNCHRONIZED Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
 }
 
 int main() {
@@ -60,24 +80,49 @@ int main() {
     t4.join();
 
     /*Task 2*/
-    std::thread PrintTh[20];
-    for(int j=0; j<20; j++){
+    //std::thread PrintTh[20];
+    std::array<std::thread, 20> PrintTh;
+    const uint8_t NumberOfPrints=20;
+    for(int j=0; j<NumberOfPrints; j++){
         PrintTh[j]=std::thread(Print50Times, ("Thread "+ std::to_string(j)));
     }
-    for(int j=0; j<20; j++){
-        PrintTh[j].join();
+    for(auto& Thread : PrintTh){
+        Thread.join();
     }
 
     /*Task 3*/
+    /*Increasing Value with Atomic*/
     std::vector<std::thread> VectorOfThreads;
-    for( int i=0; i<10; i++){
-        VectorOfThreads.emplace_back(IncrementValue);
+    const uint8_t NumberOfThreads=10;
+    for( int i=0; i<NumberOfThreads; i++){
+        VectorOfThreads.emplace_back(IncrementAtomicValue);
     }
-    for( int i=0; i<10; i++){
-        VectorOfThreads[i].join();
+    for( auto& Thread : VectorOfThreads){
+        Thread.join();
+    }
+    GlobalAtomicValue=0;
+    IncrementAtomicValue();
+    /*Increasing Value with Int*/
+    VectorOfThreads.clear();
+    for( int i=0; i<NumberOfThreads; i++){
+        VectorOfThreads.emplace_back(IncrementIntValue);
+    }
+    for( auto& Thread : VectorOfThreads){
+        Thread.join();
     }
     GlobalIntValue=0;
-    IncrementValue();
-    getchar();
+    IncrementIntValue();
+    /*Unsynchronized increase*/
+    GlobalIntValue = 0;
+    VectorOfThreads.clear();
+    for( int i=0; i<NumberOfThreads; i++){
+        VectorOfThreads.emplace_back(IncrementUnsynchronizedValue);
+    }
+    for( auto& Thread : VectorOfThreads){
+        Thread.join();
+    }
+    GlobalIntValue=0;
+    IncrementUnsynchronizedValue();
+    system("Pause");
     return 0;
 }
