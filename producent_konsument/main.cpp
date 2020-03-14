@@ -8,17 +8,16 @@
 #include <thread>
 #include <atomic>
 
-#define ARRSIZE 20
-#define QUEUELENGHT 20
-#define NUMBEROFARRAYS 40
+#define ARRSIZE 100000
+#define QUEUELENGHT 200
+#define NUMBEROFARRAYS 4000
 
 std::mutex locker;
-std::atomic_int NumberOfConsumedArrays;
+std::atomic<int> NumberOfConsumedArrays;
 class Queue{
 public:
     int q_lenght;
     std::vector<std::array<int, ARRSIZE>> queue_vector;
-    //std::vector<int> queue_vector;
     Queue(int queue_lenght){
         q_lenght=queue_lenght;
     }
@@ -54,6 +53,7 @@ public:
                 std::this_thread::yield();
             }
         }
+        std::cout << "PRODUCER FINISHED" << std::endl;
         is_finished=true;
     }
 };
@@ -66,32 +66,35 @@ public:
     }
     void take_and_sort(){
         int NumberOfConsumedArraysByMe=0;
+        bool break_possible = false;
         //while(NumberOfConsumedArrays < NUMBEROFARRAYS){
         while(true){
-                if(queue.get()->queue_vector.empty()!=true){
+                locker.lock();
+                if(!queue.get()->queue_vector.empty()){
+                    int sum=0;
                     NumberOfConsumedArrays++;
                     NumberOfConsumedArraysByMe++;
-                    locker.lock();
                     auto queue_element = queue.get()->queue_vector.front();
                     queue.get()->queue_vector.erase(queue.get()->queue_vector.begin());
                     locker.unlock();
                     std::sort(queue_element.begin(),queue_element.end());
-                    locker.lock();
-                    std::cout << "sorted elements: ";
-                    for (auto &a:queue_element){
-                        std::cout << a << " ";
-                    }
-                    std::cout << std::endl;
-                    locker.unlock();
+//                    locker.lock();
+//                    std::cout << "sorted elements: ";
+//                    for (auto &a:queue_element){
+//                        sum=sum+a;
+//                    }
+//                    std::cout << sum/ARRSIZE<<std::endl;
+//                    locker.unlock();
                 }
                 else{
+                    locker.unlock();
                     std::this_thread::yield();
                     //std::lock_guard<std::mutex> lock(locker);
                     //std::cout << "CONSUMER No elemements in queue" << std::endl;
-                    //std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    if(break_possible){break;}
                 }
                 if(Producer::is_finished){
-                    break;
+                    break_possible=true;
                 }
             }
 
@@ -103,23 +106,25 @@ public:
 bool Producer::is_finished=false;
 
 int main() {
-
+    /*8 concurrent threads are supported.*/
+    /*4 Physical cores*/
+    auto start=std::chrono::system_clock::now();
     auto my_queue=std::make_shared<Queue>(QUEUELENGHT);
     Producer my_producer(my_queue, NUMBEROFARRAYS);
-    Consumer my_consumer_1(my_queue);
-    Consumer my_consumer_2(my_queue);
-    Consumer my_consumer_3(my_queue);
+
+    const uint8_t NumberOfThreads=7;
+    Consumer my_consumer_1[NumberOfThreads]={my_queue,my_queue,my_queue,my_queue,my_queue,my_queue,my_queue};
+    std::array<std::thread, NumberOfThreads> ConsumerThread;
     std::thread ProducerThread(&Producer::adding_elements_to_queue,my_producer);
-    std::thread ConsumerThread_1(&Consumer::take_and_sort, my_consumer_1);
-    std::thread ConsumerThread_2(&Consumer::take_and_sort, my_consumer_2);
-    std::thread ConsumerThread_3(&Consumer::take_and_sort, my_consumer_3);
-//    std::thread ConsumerThread_4(&Consumer::take_and_sort, my_consumer);
-//    std::thread ConsumerThread_6(&Consumer::take_and_sort, my_consumer);
-//    std::thread ConsumerThread_5(&Consumer::take_and_sort, my_consumer);
+    for(int j=0; j<NumberOfThreads; j++){
+        ConsumerThread[j]=std::thread(&Consumer::take_and_sort, my_consumer_1[j]);
+    }
     ProducerThread.join();
-    ConsumerThread_1.join();
-    ConsumerThread_2.join();
-    ConsumerThread_3.join();
-    std::cout << "Program finished" << std::endl;
+    for (auto &Thread:ConsumerThread)
+        Thread.join();
+    auto stop=std::chrono::system_clock::now();
+    std::chrono::duration<double> duration=stop-start;
+
+    std::cout << "Program finished in: "<< duration.count() << std::endl;
 
 }
