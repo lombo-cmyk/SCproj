@@ -28,7 +28,6 @@ void Print50Times(std::string s){
     for (int i=0; i<NumberOfPrints; i++){
         std::lock_guard<std::mutex> lock(locker);
         std::cout << "Passed string: " << s << std::endl;
-        //std::this_thread::sleep_for(std::chrono::milliseconds(i));
     }
 }
 
@@ -46,9 +45,7 @@ void IncrementIntValue(){
 
 void IncrementAtomicValue(){
     auto start=std::chrono::system_clock::now();
-    while(GlobalAtomicValue++<10000000){
-        //GlobalAtomicValue++;
-    }
+    while(GlobalAtomicValue++<10000000){}
     auto stop=std::chrono::system_clock::now();
     std::chrono::duration<double> duration=stop-start;
     std::lock_guard<std::mutex> lock(locker);
@@ -57,9 +54,7 @@ void IncrementAtomicValue(){
 
 void IncrementUnsynchronizedValue(){
     auto start=std::chrono::system_clock::now();
-    while(GlobalIntValue<10000000){
-        GlobalIntValue++;
-    }
+    while(GlobalIntValue++<10000000){}
     auto stop=std::chrono::system_clock::now();
     std::chrono::duration<double> duration=stop-start;
     std::lock_guard<std::mutex> lock(locker);
@@ -128,6 +123,8 @@ void ThirdTask(){
 }
 
 int main() {
+    /* 4 Physical cores, 8 logical cores*/
+    /*Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz*/
     FirstTask();
     SecondTask();
     ThirdTask();
