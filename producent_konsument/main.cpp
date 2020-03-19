@@ -7,12 +7,15 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
 #define ARRSIZE 100000
 #define QUEUELENGHT 200
 #define NUMBEROFARRAYS 4000
-
+std::condition_variable conditionVariable;
+std::condition_variable condition_producer;
 std::mutex locker;
+std::mutex locker_producer;
 std::atomic<int> NumberOfConsumedArrays;
 class Queue{
 public:
@@ -35,27 +38,49 @@ public:
     void adding_elements_to_queue(){
         std::random_device rd;
         std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(-50000, 50000);
         int j=0;
+        std::array<int, ARRSIZE> queue_element={};
         while(j<number_of_arrays) {
             if(queue.get()->queue_vector.size()<QUEUELENGHT){
                 j++;
-                std::uniform_int_distribution<> dis(-50000, 50000);
-                std::array<int, ARRSIZE> queue_element;
                 for (int i = 0; i < ARRSIZE; i++) {
                     queue_element[i] = dis(gen);
                 }
-                std::lock_guard<std::mutex> lock(locker);
-                queue.get()->queue_vector.push_back(queue_element);
+                //std::cout << "Producent pracuje" << std::endl;
+                {
+                    std::lock_guard<std::mutex> lock(locker);
+                    queue.get()->queue_vector.push_back(queue_element);
+                }
+                //locker.unlock();
+                //std::cout << "Producent dodaje element" << std::endl;
+                conditionVariable.notify_one();
             }
             else{
+                conditionVariable.notify_one();
                 //std::lock_guard<std::mutex> lock(locker);
                 //std::cout << "PRODUCER queue full" << std::endl;
+                //locker.unlock();
                 std::this_thread::yield();
             }
+
         }
+        //conditionVariable.notify_one();
         std::cout << "PRODUCER FINISHED" << std::endl;
         is_finished=true;
+        std::size_t size = queue.get()->queue_vector.size();
+        std::cout << "Kolejka aktualna to " << size << std::endl;
+        while(!queue.get()->queue_vector.empty()){
+            {
+                std::lock_guard<std::mutex> lock(locker);
+                if(!queue.get()->queue_vector.empty())
+                    conditionVariable.notify_one();
+                else
+                    break;
+            }
+        }
     }
+    static bool IsFinished(){return !is_finished;}
 };
 
 class Consumer{
@@ -64,38 +89,43 @@ public:
     Consumer(std::shared_ptr<Queue> passed_queue){
      queue=passed_queue;
     }
+
     void take_and_sort(){
         int NumberOfConsumedArraysByMe=0;
         bool break_possible = false;
+        std::array<int, ARRSIZE> queue_element={};
         //while(NumberOfConsumedArrays < NUMBEROFARRAYS){
         while(true){
-                locker.lock();
-                if(!queue.get()->queue_vector.empty()){
-                    int sum=0;
-                    NumberOfConsumedArrays++;
-                    NumberOfConsumedArraysByMe++;
-                    auto queue_element = queue.get()->queue_vector.front();
-                    queue.get()->queue_vector.erase(queue.get()->queue_vector.begin());
-                    locker.unlock();
-                    std::sort(queue_element.begin(),queue_element.end());
-//                    locker.lock();
-//                    std::cout << "sorted elements: ";
-//                    for (auto &a:queue_element){
-//                        sum=sum+a;
-//                    }
-//                    std::cout << sum/ARRSIZE<<std::endl;
-//                    locker.unlock();
-                }
-                else{
-                    locker.unlock();
-                    std::this_thread::yield();
-                    //std::lock_guard<std::mutex> lock(locker);
-                    //std::cout << "CONSUMER No elemements in queue" << std::endl;
-                    if(break_possible){break;}
-                }
-                if(Producer::is_finished){
-                    break_possible=true;
-                }
+                    std::unique_lock<std::mutex> lck(locker);
+                    if(conditionVariable.wait_for(lck,std::chrono::seconds(1))==std::cv_status::no_timeout) {
+                        if (!queue.get()->queue_vector.empty()) {
+                            //std::cout << "gogogogogogo" << std::endl;
+                            queue_element = queue.get()->queue_vector.front();
+                            queue.get()->queue_vector.erase(queue.get()->queue_vector.begin());
+                            lck.unlock();
+                            int sum = 0;
+                            NumberOfConsumedArrays++;
+                            NumberOfConsumedArraysByMe++;
+                            std::sort(queue_element.begin(), queue_element.end());
+//                            std::cout << "sorted elements: ";
+//                            for (auto &a : queue_element) {
+//                                sum = sum + a;
+//                            }
+//                            std::cout << sum / ARRSIZE << std::endl;
+                            //locker.unlock();
+                            }
+                        }
+                    else {
+                            std::cout << "timeout" << std::endl;
+                            std::this_thread::yield();
+                            if(conditionVariable.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout) break;
+                            //std::cout << "CONSUMER No elemements in queue" << std::endl;
+                            //locker.unlock();
+                        }
+                    //} else {
+                    //    break;
+                    //}
+                //if(Producer::is_finished){break_possible=true;}
             }
 
         std::lock_guard<std::mutex> lock(locker);
@@ -126,5 +156,5 @@ int main() {
     std::chrono::duration<double> duration=stop-start;
 
     std::cout << "Program finished in: "<< duration.count() << std::endl;
-
+    system("Pause");
 }
