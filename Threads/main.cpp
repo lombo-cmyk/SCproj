@@ -7,19 +7,19 @@ static std::mutex locker;
 std::atomic_int GlobalAtomicValue;
 int GlobalIntValue;
 void FunctionThreadInfo(std::string s){
-        std::cout << s << "my id is:" <<std::this_thread::get_id();
+    std::cout << s << "my id is: " <<std::this_thread::get_id() << std::endl;
 }
 
 class ThreadClass
 {
 public:
     static void ClassMethod(std::string s){
-        std::cout << s << "my id is:" <<std::this_thread::get_id();
+        std::cout << s << "my id is: " << std::this_thread::get_id() << std::endl;
     }
 };
 struct ThreadStruct{
     void operator()(std::string s) {
-        std::cout << s << "my id is:" <<std::this_thread::get_id();
+        std::cout << s << "my id is: " << std::this_thread::get_id() << std::endl;
     }
 };
 
@@ -66,31 +66,31 @@ void IncrementUnsynchronizedValue(){
     std::cout << "UNSYNCHRONIZED Execution time for "<< std::this_thread::get_id() <<" is: "<< duration.count() << std::endl;
 }
 
-int main() {
-    /*Task one*/
-    std::thread t1(FunctionThreadInfo,"\nI'm thread 1, ");
-    std::thread t2(ThreadClass::ClassMethod,"\nI'm thread 2, ");
-    std::thread t3(ThreadStruct(),"\nI'm thread 3, ");
+void FirstTask(){
+    std::thread t1(FunctionThreadInfo, "I'm thread 1, ");
+    std::thread t2(ThreadClass::ClassMethod, "I'm thread 2, ");
+    std::thread t3(ThreadStruct(), "I'm thread 3, ");
     std::thread t4([](std::string s){
-        std::cout << s << "my id is:" <<std::this_thread::get_id();
-        },"\nI'm thread 4, ");
+        std::cout << s << "my id is: " << std::this_thread::get_id() << std::endl;
+    },"I'm thread 4, ");
     t1.join();
     t2.join();
     t3.join();
     t4.join();
+}
 
-    /*Task 2*/
-    //std::thread PrintTh[20];
-    std::array<std::thread, 20> PrintTh;
-    const uint8_t NumberOfPrints=20;
-    for(int j=0; j<NumberOfPrints; j++){
-        PrintTh[j]=std::thread(Print50Times, ("Thread "+ std::to_string(j)));
+void SecondTask(){
+    const uint8_t NumberOfThreads=20;
+    std::array<std::thread, NumberOfThreads> PrintTh;
+    for(int j=0; j<NumberOfThreads; j++){
+        PrintTh[j]=std::thread(Print50Times, ("Thread number: "+ std::to_string(j)));
     }
     for(auto& Thread : PrintTh){
         Thread.join();
     }
+}
 
-    /*Task 3*/
+void ThirdTask(){
     /*Increasing Value with Atomic*/
     std::vector<std::thread> VectorOfThreads;
     const uint8_t NumberOfThreads=10;
@@ -102,6 +102,7 @@ int main() {
     }
     GlobalAtomicValue=0;
     IncrementAtomicValue();
+
     /*Increasing Value with Int*/
     VectorOfThreads.clear();
     for( int i=0; i<NumberOfThreads; i++){
@@ -112,6 +113,7 @@ int main() {
     }
     GlobalIntValue=0;
     IncrementIntValue();
+
     /*Unsynchronized increase*/
     GlobalIntValue = 0;
     VectorOfThreads.clear();
@@ -123,6 +125,13 @@ int main() {
     }
     GlobalIntValue=0;
     IncrementUnsynchronizedValue();
+}
+
+int main() {
+    FirstTask();
+    SecondTask();
+    ThirdTask();
+
     system("Pause");
     return 0;
 }
