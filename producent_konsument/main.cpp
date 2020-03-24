@@ -12,10 +12,11 @@
 
 #define ARR_SIZE 100000
 #define QUEUE_LENGTH 200
-#define NUMBER_OF_ARRAYS 400
+#define NUMBER_OF_ARRAYS 4000
 
 std::condition_variable conditionVariable;
 std::mutex locker;
+std::mutex print_mutex;
 std::atomic<int> numberOfConsumedArrays;
 
 class Queue{
@@ -61,6 +62,7 @@ public:
             }
 
         }
+        std::lock_guard<std::mutex> lock(print_mutex);
         std::cout << "PRODUCER FINISHED" << std::endl;
     }
 };
@@ -92,7 +94,7 @@ public:
                 if(conditionVariable.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout) break;
             }
         }
-        std::lock_guard<std::mutex> lock(locker);
+        std::lock_guard<std::mutex> lock(print_mutex);
         std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
     }
 };
