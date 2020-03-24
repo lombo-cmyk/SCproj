@@ -1,5 +1,6 @@
 #include <iostream>
 #include <array>
+#include <utility>
 #include <vector>
 #include <random>
 #include <memory>
@@ -9,47 +10,48 @@
 #include <atomic>
 #include <condition_variable>
 
-#define ARRSIZE 100000
-#define QUEUELENGHT 200
-#define NUMBEROFARRAYS 4000
+#define ARR_SIZE 100000
+#define QUEUE_LENGTH 200
+#define NUMBER_OF_ARRAYS 400
 
 std::condition_variable conditionVariable;
 std::mutex locker;
-std::atomic<int> NumberOfConsumedArrays;
+std::atomic<int> numberOfConsumedArrays;
 
 class Queue{
 public:
-    int q_lenght;
-    std::vector<std::array<int, ARRSIZE>> queue_vector;
-    Queue(int queue_lenght){
-        q_lenght=queue_lenght;
+    int m_length;
+    std::vector<std::array<int, ARR_SIZE>> m_queueVector;
+    explicit Queue(int queue_length) {
+        m_length=queue_length;
     }
+
 };
 
 class Producer{
 public:
-    std::shared_ptr<Queue> queue;
-    int number_of_arrays;
-    Producer(std::shared_ptr<Queue> passed_queue, int passed_number_of_arrays){
-        queue=passed_queue;
-        number_of_arrays=passed_number_of_arrays;
+    std::shared_ptr<Queue> m_queue;
+    int m_numberOfArrays;
+    Producer(std::shared_ptr<Queue> passedQueue, int passedNumberOfArrays) :
+    m_queue{std::move(passedQueue)}, m_numberOfArrays(passedNumberOfArrays){
+
     }
 
-    void adding_elements_to_queue(){
+    void AddElementsToQueue(){
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(-50000, 50000);
         int j=0;
-        std::array<int, ARRSIZE> queue_element={};
-        while(j<number_of_arrays) {
-            if(queue.get()->queue_vector.size()<QUEUELENGHT){
+        std::array<int, ARR_SIZE> queueElement={};
+        while(j < m_numberOfArrays) {
+            if(m_queue->m_queueVector.size() < QUEUE_LENGTH){
                 j++;
-                for (int i = 0; i < ARRSIZE; i++) {
-                    queue_element[i] = dis(gen);
+                for (int i = 0; i < ARR_SIZE; i++) {
+                    queueElement[i] = dis(gen);
                 }
                 {
                     std::lock_guard<std::mutex> lock(locker);
-                    queue.get()->queue_vector.push_back(queue_element);
+                    m_queue->m_queueVector.push_back(queueElement);
                 }
                 conditionVariable.notify_one();
             }
@@ -65,24 +67,25 @@ public:
 
 class Consumer{
 public:
-    std::shared_ptr<Queue> queue;
-    Consumer(std::shared_ptr<Queue> passed_queue){
-     queue=passed_queue;
+    std::shared_ptr<Queue> m_queue;
+    Consumer() = default;
+    Consumer(std::shared_ptr<Queue> passed_queue) :
+    m_queue(std::move(passed_queue)){
+
     }
 
-    void take_and_sort(){
-        int NumberOfConsumedArraysByMe=0;
-        bool break_possible = false;
-        std::array<int, ARRSIZE> queue_element={};
+    void TakeAndSort(){
+        int numberOfConsumedArraysByMe=0;
+        std::array<int, ARR_SIZE> queueElement={};
         while(true){
             std::unique_lock<std::mutex> lck(locker);
-            if (!queue.get()->queue_vector.empty()) {
-                queue_element = queue.get()->queue_vector.front();
-                queue.get()->queue_vector.erase(queue.get()->queue_vector.begin());
+            if (!m_queue->m_queueVector.empty()) {
+                queueElement = m_queue->m_queueVector.front();
+                m_queue->m_queueVector.erase(m_queue->m_queueVector.begin());
                 lck.unlock();
-                NumberOfConsumedArrays++;
-                NumberOfConsumedArraysByMe++;
-                std::sort(queue_element.begin(), queue_element.end());
+                numberOfConsumedArrays++;
+                numberOfConsumedArraysByMe++;
+                std::sort(queueElement.begin(), queueElement.end());
             }
             else {
                 std::this_thread::yield();
@@ -90,7 +93,7 @@ public:
             }
         }
         std::lock_guard<std::mutex> lock(locker);
-        std::cout << "I consumed: " << NumberOfConsumedArraysByMe << " arrays" << std::endl;
+        std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
     }
 };
 
@@ -100,15 +103,18 @@ int main() {
     /*4 Physical cores*/
     auto start=std::chrono::system_clock::now();
 
-    auto myQueue=std::make_shared<Queue>(QUEUELENGHT);
-    Producer myProducer(myQueue, NUMBEROFARRAYS);
+    auto myQueue=std::make_shared<Queue>(QUEUE_LENGTH);
+    Producer myProducer(myQueue, NUMBER_OF_ARRAYS);
 
     const std::size_t NumberOfThreads=7;
-    std::array<Consumer, NumberOfThreads> myConsumers = { myQueue, myQueue, myQueue, myQueue, myQueue, myQueue, myQueue };
+    std::array<Consumer, NumberOfThreads> myConsumers={};
+    for (auto& consumer : myConsumers){
+        consumer=myQueue;
+    }
     std::array<std::thread, NumberOfThreads> ConsumerThread;
-    std::thread ProducerThread(&Producer::adding_elements_to_queue, myProducer);
+    std::thread ProducerThread(&Producer::AddElementsToQueue, myProducer);
     for(int j=0; j<NumberOfThreads; j++){
-        ConsumerThread[j]=std::thread(&Consumer::take_and_sort, myConsumers[j]);
+        ConsumerThread[j]=std::thread(&Consumer::TakeAndSort, myConsumers[j]);
     }
     ProducerThread.join();
     for (auto &Thread : ConsumerThread)
