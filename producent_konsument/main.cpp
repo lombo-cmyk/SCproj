@@ -102,10 +102,6 @@ public:
         std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
     }
 };
-int user_input(int input){
-    const int  my_inp=input;
-    return my_inp;
-}
 
 int main() {
     /*8 concurrent threads are supported.*/
