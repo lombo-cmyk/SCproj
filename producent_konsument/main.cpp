@@ -83,6 +83,7 @@ public:
     void TakeAndSort(){
         int numberOfConsumedArraysByMe=0;
         std::array<int, ARR_SIZE> queueElement={};
+        double average;
         while(true){
             std::unique_lock<std::mutex> lck(m_queue->m_queMutex);
             if (!m_queue->m_queueVector.empty()) {
@@ -92,6 +93,11 @@ public:
                 m_queue->m_numberOfConsumedArrays++;
                 numberOfConsumedArraysByMe++;
                 std::sort(queueElement.begin(), queueElement.end());
+                average = CalculateAverage(queueElement);
+                {
+                    std::lock_guard<std::mutex> lock(m_queue->m_printMutex);
+                    std::cout << "Calculated checksum: " << average << std::endl;
+                }
             }
             else {
                 std::this_thread::yield();
@@ -100,6 +106,13 @@ public:
         }
         std::lock_guard<std::mutex> lock(m_queue->m_printMutex);
         std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
+    }
+    double CalculateAverage(std::array<int, ARR_SIZE> passedArray){
+        double sum=0;
+        for(auto& number : passedArray){
+            sum+=number;
+        }
+        return sum/passedArray.size();
     }
 };
 
@@ -111,7 +124,7 @@ int main() {
     auto myQueue=std::make_shared<Queue>(QUEUE_LENGTH);
     Producer myProducer(myQueue, NUMBER_OF_ARRAYS);
 
-    const std::size_t NumberOfThreads=5;
+    const std::size_t NumberOfThreads=7;
     std::array<Consumer, NumberOfThreads> myConsumers={};
     for (auto& consumer : myConsumers){
         consumer=myQueue;
