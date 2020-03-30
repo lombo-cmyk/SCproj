@@ -10,8 +10,6 @@
 #include <atomic>
 #include <condition_variable>
 
-//TODO Report
-
 #define ARR_SIZE 100000
 #define QUEUE_LENGTH 200
 #define NUMBER_OF_ARRAYS 4000
@@ -56,11 +54,9 @@ public:
                     std::lock_guard<std::mutex> lock(m_queue->m_queMutex);
                     m_queue->m_queueVector.push_back(queueElement);
                 }
-//                conditionVariable.notify_one();
                 m_queue->m_conditionVariable.notify_one();
             }
             else{
-//                conditionVariable.notify_one();
                 m_queue->m_conditionVariable.notify_one();
                 std::this_thread::yield();
             }
@@ -101,7 +97,8 @@ public:
             }
             else {
                 std::this_thread::yield();
-                if(m_queue->m_conditionVariable.wait_for(lck,std::chrono::seconds(1))==std::cv_status::timeout) break;
+                if(m_queue->m_conditionVariable.wait_for(lck,
+                        std::chrono::seconds(1))==std::cv_status::timeout) break;
             }
         }
         std::lock_guard<std::mutex> lock(m_queue->m_printMutex);
