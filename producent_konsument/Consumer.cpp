@@ -13,7 +13,7 @@ m_queue(std::move(passed_queue)){
 
 void Consumer::TakeAndSort(){
     int numberOfConsumedArraysByMe=0;
-    std::array<int, Queue::arrSize> queueElement={};
+    intArray queueElement={};
     double average;
     while(true){
         std::unique_lock<std::mutex> lck(m_queue->m_queMutex);
@@ -40,7 +40,7 @@ void Consumer::TakeAndSort(){
     std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
 }
 
-double Consumer::CalculateAverage(std::array<int, Queue::arrSize> passedArray){
+double Consumer::CalculateAverage(intArray passedArray){
         double sum=0;
         for(auto& number : passedArray){
             sum+=number;

@@ -3,7 +3,6 @@
 //
 
 #include "Producer.h"
-#include <array>
 #include <utility>
 #include <random>
 #include <algorithm>
@@ -18,9 +17,11 @@ Producer::Producer(std::shared_ptr<Queue> passedQueue, int passedNumberOfArrays)
 void Producer::AddElementsToQueue() {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(-50000, 50000);
+    int absMaxToDraw = 50000;
+    std::uniform_int_distribution<> dis(-absMaxToDraw, absMaxToDraw);
     int j=0;
-    std::array<int, Queue::arrSize> queueElement={};
+    intArray queueElement ={};
+//    std::array<int, Queue::arrSize> queueElement={};
     while(j < m_numberOfArrays) {
         if(m_queue->m_queueVector.size() < m_queue->m_length){
             j++;

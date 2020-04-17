@@ -7,14 +7,17 @@
 
 #include "Queue.h"
 
+typedef std::array<int, Queue::arrSize> intArray;
+
 class Consumer{
 public:
-    std::shared_ptr<Queue> m_queue;
     Consumer() = default;
     Consumer(std::shared_ptr<Queue> passed_queue);
-
     void TakeAndSort();
-    double CalculateAverage(std::array<int, Queue::arrSize> passedArray);
+
+private:
+    std::shared_ptr<Queue> m_queue;
+    double CalculateAverage(intArray passedArray);
 };
 
 

@@ -8,14 +8,16 @@
 #include <thread>
 #include "Queue.h"
 
+typedef std::array<int, Queue::arrSize> intArray;
+
 class Producer {
 public:
+    Producer(std::shared_ptr <Queue> passedQueue, int passedNumberOfArrays);
+    void AddElementsToQueue();
+
+private:
     std::shared_ptr <Queue> m_queue;
     int m_numberOfArrays;
-
-    Producer(std::shared_ptr <Queue> passedQueue, int passedNumberOfArrays);
-
-    void AddElementsToQueue();
 };
 
 #endif //PRODUCENT_KONSUMENT_PRODUCER_H

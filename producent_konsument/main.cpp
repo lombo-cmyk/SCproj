@@ -9,12 +9,12 @@
 #include "Queue.h"
 #include "Producer.h"
 #include "Consumer.h"
-
+#include "Timer.h"
 
 int main() {
     /*8 concurrent threads are supported.*/
     /*4 Physical cores*/
-    auto start=std::chrono::system_clock::now();
+    Timer T;
     int queueLength = 200;
     int numberOfArrays = 4000;
 
@@ -34,9 +34,6 @@ int main() {
     ProducerThread.join();
     for (auto &Thread : ConsumerThread)
         Thread.join();
-    auto stop=std::chrono::system_clock::now();
-    std::chrono::duration<double> duration=stop-start;
 
-    std::cout << "Program finished in: "<< duration.count() << std::endl;
     std::cout << "No all consumed arrays <atomic>: " << myQueue->m_numberOfConsumedArrays << std::endl;
 }
