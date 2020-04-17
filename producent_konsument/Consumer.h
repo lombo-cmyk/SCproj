@@ -6,6 +6,10 @@
 #define PRODUCENT_KONSUMENT_CONSUMER_H
 
 #include "Queue.h"
+#include <thread>
+#include <algorithm>
+#include <iostream>
+
 
 typedef std::array<int, Queue::arrSize> intArray;
 

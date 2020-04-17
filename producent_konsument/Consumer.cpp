@@ -1,10 +1,8 @@
 //
 // Created by lkania on 17.04.2020.
 //
-#include <iostream>
 #include "Consumer.h"
-#include <thread>
-#include <algorithm>
+
 
 Consumer::Consumer(std::shared_ptr<Queue> passed_queue) :
 m_queue(std::move(passed_queue)){

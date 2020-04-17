@@ -6,6 +6,11 @@
 
 #include <iostream>
 #include <thread>
+#include <utility>
+#include <random>
+#include <algorithm>
+#include <mutex>
+#include <condition_variable>
 #include "Queue.h"
 
 typedef std::array<int, Queue::arrSize> intArray;
@@ -18,6 +23,7 @@ public:
 private:
     std::shared_ptr <Queue> m_queue;
     int m_numberOfArrays;
+    intArray FillArray(std::uniform_int_distribution<> dis, std::mt19937& gen);
 };
 
 #endif //PRODUCENT_KONSUMENT_PRODUCER_H

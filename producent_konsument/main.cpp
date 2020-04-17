@@ -1,9 +1,6 @@
 #include <iostream>
 #include <array>
 #include <utility>
-#include <random>
-#include <algorithm>
-#include <mutex>
 #include <thread>
 #include <condition_variable>
 #include "Queue.h"
