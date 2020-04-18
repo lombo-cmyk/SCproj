@@ -5,6 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <numeric>
+#include <thread>
 
 Consumer::Consumer(std::shared_ptr<Queue> passed_queue) :
 m_queue(std::move(passed_queue)){
@@ -40,7 +41,8 @@ void Consumer::TakeAndSort() const {
         }
     }
     std::lock_guard<std::mutex> lock(m_queue->m_printMutex);
-    std::cout << "I consumed: " << numberOfConsumedArraysByMe << " arrays" << std::endl;
+    std::cout << "Thread " << std::this_thread::get_id() << " consumed: " << numberOfConsumedArraysByMe << " arrays" <<
+                                                                                                            std::endl;
 }
 
 
