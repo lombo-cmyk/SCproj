@@ -4,26 +4,23 @@
 #ifndef PRODUCENT_KONSUMENT_PRODUCER_H
 #define PRODUCENT_KONSUMENT_PRODUCER_H
 
-#include <iostream>
-#include <thread>
-#include <utility>
+
 #include <random>
-#include <algorithm>
-#include <mutex>
-#include <condition_variable>
+#include "types.h"
 #include "Queue.h"
 
-typedef std::array<int, Queue::arrSize> intArray;
 
 class Producer {
 public:
     Producer(std::shared_ptr <Queue> passedQueue, int passedNumberOfArrays);
-    void AddElementsToQueue();
+    void AddElementsToQueue() const;
 
 private:
+    const std::size_t m_maxToDraw = 50000;
+    const std::size_t m_minToDraw = -50000;
     std::shared_ptr <Queue> m_queue;
     int m_numberOfArrays;
-    intArray FillArray(std::uniform_int_distribution<> dis, std::mt19937& gen);
+    void FillArray(intArray& qElement, std::uniform_int_distribution<> dis, std::mt19937& gen) const;
 };
 
 #endif //PRODUCENT_KONSUMENT_PRODUCER_H

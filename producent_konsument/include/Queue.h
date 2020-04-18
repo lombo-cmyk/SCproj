@@ -20,7 +20,9 @@ public:
     std::mutex m_printMutex;
     std::condition_variable m_conditionVariable;
     std::atomic<int> m_numberOfConsumedArrays = 0;
-    explicit Queue(int queue_length) { m_length=queue_length; }
+    explicit Queue(int queue_length):m_length(queue_length) {
+
+    }
 
 };
 

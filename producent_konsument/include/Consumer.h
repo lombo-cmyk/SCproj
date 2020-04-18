@@ -10,18 +10,17 @@
 #include <algorithm>
 #include <iostream>
 
-
 typedef std::array<int, Queue::arrSize> intArray;
 
 class Consumer{
 public:
     Consumer() = default;
     Consumer(std::shared_ptr<Queue> passed_queue);
-    void TakeAndSort();
+    void TakeAndSort() const;
 
 private:
     std::shared_ptr<Queue> m_queue;
-    double CalculateAverage(intArray passedArray);
+    double CalculateAverage(intArray& passedArray) const;
 };
 
 
