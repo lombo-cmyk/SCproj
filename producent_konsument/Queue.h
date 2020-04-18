@@ -14,7 +14,7 @@
 class Queue{
 public:
     int m_length;
-    static const int arrSize = 1000;
+    static const int arrSize = 100000;
     std::vector<std::array<int, arrSize>> m_queueVector;
     std::mutex m_queMutex;
     std::mutex m_printMutex;
