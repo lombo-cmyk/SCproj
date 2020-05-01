@@ -75,53 +75,56 @@ void nonBlockingBarrier(int argc, char* argv[]){
     MPI_Finalize();
 }
 
-int is_prime(int nr)
+bool is_prime(int isItPrime)
 {
-    if (nr < 2)
-        return 0;
-    for (int i = 2; i <= sqrt(nr); i++)
-    if (nr%i == 0)
-        return 0;
-
-    return 1;
+    if(isItPrime < 2)
+        return false;
+    for (int i = 2; i <= sqrt(isItPrime); i++){
+        if (isItPrime % i == 0)
+            return false;
+    }
+    return true;
 }
+
 
 int main (int argc, char* argv[]){
 //    pointToPoint(argc, argv);
     Timer T;
-    int numberToCheck = 1'000'0000;
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int iteration = rank;
     MPI_Request request;
     MPI_Status status;
-    int numberOfPrimes=0;
-    int totalNumberOfPrimes=0;
+    int numberToCheck = 1'000'000;
+    int iteration = rank;
+    int numberOfPrimes=0,totalNumberOfPrimes=0;
 
-    if(rank==0){
-        iteration = size-1;
-        int something;
-        while(iteration <= numberToCheck){
-            MPI_Recv(&something, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-            iteration++;
-            MPI_Send(&iteration, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-            if(iteration >= numberToCheck){
-                for(std::size_t i=1; i<size; i++){
-                    MPI_Isend(&iteration, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &request);
+    switch (rank) {
+        case 0:
+            iteration = size - 1;
+            int something;
+            while (iteration <= numberToCheck) {
+                MPI_Recv(&something, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+                iteration++;
+                if (iteration >= numberToCheck) {
+                    for (std::size_t i = 1; i < size; i++)
+                        MPI_Isend(&iteration, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &request);
+                } else {
+                    MPI_Send(&iteration, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
                 }
+
             }
-        }
+            break;
+        default:
+            while (iteration <= numberToCheck) {
+                MPI_Isend(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
+                numberOfPrimes += static_cast<int>(is_prime(iteration));
+                MPI_Wait(&request, &status);
+                MPI_Recv(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+            }
     }
-    else{
-        while (iteration <= numberToCheck){
-            MPI_Isend(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
-            numberOfPrimes += is_prime(iteration);
-            MPI_Wait(&request, &status);
-            MPI_Recv(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-        }
-    }
+
 
 
     MPI_Reduce(&numberOfPrimes, &totalNumberOfPrimes, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
