@@ -3,7 +3,7 @@
 //
 
 #ifndef MPI_TIMER_H
-
+#define MPI_TIMER_H
 
 #include <chrono>
 #include <iostream>
@@ -23,8 +23,5 @@ private:
     std::chrono::system_clock::time_point stop;
 
 };
-
-
-#define MPI_TIMER_H
 
 #endif //MPI_TIMER_H
