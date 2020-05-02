@@ -3,5 +3,7 @@ project(MPIBasics)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(MPI src/main.cpp src/MyMpi.cpp)
+file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "src/*.cpp")
+add_executable(MPIBasics ${SRC})
+
 

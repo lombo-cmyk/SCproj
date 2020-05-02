@@ -4,7 +4,6 @@
 #include <mpi.h>
 #include <cmath>
 #include <iostream>
-#include <unistd.h>
 #include "../include/Timer.h"
 #include "../include/MyMpi.h"
 
@@ -60,7 +59,6 @@ void nonBlockingBarrier(int argc, char* argv[]){
     int flag;
     if (rank==0) {
         number = rank;
-        sleep(2);
         for (std::size_t i = 1; i < size; i++) {
             MPI_Isend(&number, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &request);
             MPI_Wait(&request, &status);
@@ -77,23 +75,12 @@ void nonBlockingBarrier(int argc, char* argv[]){
     MPI_Finalize();
 }
 
-bool is_prime(int isItPrime)
-{
-    if(isItPrime < 2)
-        return false;
-    for (int i = 2; i <= sqrt(isItPrime); i++){
-        if (isItPrime % i == 0)
-            return false;
-    }
-    return true;
-}
-
 
 int main (int argc, char* argv[]){
 //    pointToPoint(argc, argv);
     Timer T;
-//    int number = 1'000'000;
-    MyMpi PrimeChecker(argc, argv);//, number);
+    int number = 1'000'000;
+    MyMpi PrimeChecker(argc, *&argv, number);
     PrimeChecker.Run();
     PrimeChecker.showResults();
     return 0;

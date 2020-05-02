@@ -4,7 +4,8 @@
 #include "../include/MyMpi.h"
 #include <cmath>
 
-MyMpi::MyMpi(int argcc, char* argvv[]):argc(argcc), argv(argvv){
+MyMpi::MyMpi(int argcc, char** &argvv, int number):
+             argc(argcc), argv(argvv), numberToCheck(number){
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -41,10 +42,12 @@ void MyMpi::rootSender() {
 }
 
 void MyMpi::childPrimeHunter() {
+    int flag;
     while (iteration <= numberToCheck) {
         MPI_Isend(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
         numberOfPrimes += static_cast<int>(isPrime(iteration));
         MPI_Wait(&request, &status);
+        MPI_Test(&request, &flag, &status);
         MPI_Recv(&iteration, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     }
 }
@@ -65,12 +68,3 @@ bool MyMpi::isPrime(int isItPrime) const{
     }
     return true;
 }
-
-
-
-
-
-
-
-
-
