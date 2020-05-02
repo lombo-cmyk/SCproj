@@ -3,4 +3,5 @@ project(MPIBasics)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(MPI main.cpp Timer.h)
+add_executable(MPI src/main.cpp src/MyMpi.cpp)
+
