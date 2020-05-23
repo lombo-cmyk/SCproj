@@ -79,7 +79,7 @@ void nonBlockingBarrier(int argc, char* argv[]){
 int main (int argc, char* argv[]){
 //    pointToPoint(argc, argv);
     Timer T;
-    int number = 1'000'000;
+    int number = 10'000'000;
     MyMpi PrimeChecker(argc, *&argv, number);
     PrimeChecker.Run();
     PrimeChecker.showResults();
