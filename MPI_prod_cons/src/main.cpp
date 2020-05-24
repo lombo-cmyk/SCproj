@@ -1,17 +1,22 @@
 
-#include <mpi.h>
-#include <cmath>
-#include <iostream>
 #include "../include/Timer.h"
-#include "../include/ProducerConsumerMPI.h"
+#include "../include/interfaceMPI.h"
+#include "../include/Producer.h"
+#include "../include/Consumer.h"
+
 
 int main (int argc, char* argv[]){
     Timer T;
-    int number = 1500;
-    std::cout << "Starting constructor" << std::endl;
-    ProducerConsumerMPI PrimeChecker(argc, *&argv, number);
-    std::cout << "Starting run" << std::endl;
-    PrimeChecker.Run();
-    PrimeChecker.showResults();
+    int numberOfArrays = 1500;
+    interfaceMPI PrimeChecker(argc, *&argv);
+    int rank = PrimeChecker.getRank();
+    if (rank == 0){
+        Producer myProducer(numberOfArrays);
+        myProducer.showResults();
+    }
+    else{
+        Consumer myConsumer;
+        myConsumer.showResults();
+    }
     return 0;
 }

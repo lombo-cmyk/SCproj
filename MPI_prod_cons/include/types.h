@@ -4,5 +4,7 @@
 
 #ifndef MPI_PROD_CONS_TYPES_H
 #define MPI_PROD_CONS_TYPES_H
-using intArray = std::array<int, 100000>;
+
+#include "interfaceMPI.h"
+using intArray = std::array<int, interfaceMPI::arrSize>;
 #endif //MPI_PROD_CONS_TYPES_H
