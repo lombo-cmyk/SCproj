@@ -7,9 +7,9 @@
 
 int main (int argc, char* argv[]){
     Timer T;
-    int numberOfArrays = 1500;
-    interfaceMPI PrimeChecker(argc, *&argv);
-    int rank = PrimeChecker.getRank();
+    int numberOfArrays = 4000;
+    interfaceMPI myMPI(argc, *&argv);
+    int rank = myMPI.getRank();
     if (rank == 0){
         Producer myProducer(numberOfArrays);
         myProducer.showResults();
